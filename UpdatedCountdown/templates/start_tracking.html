@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Device Tracking</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+    <style>
+        /* h1{
+            font-size: 4rem;
+        }
+        button{
+            font-size: 2rem;
+            
+
+        }
+        #map{
+margin-top: 2rem;
+height: 60vh;
+        } */
+        #map{
+            height: 600px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1 >Bus Tracking 🚌</h1>
+    <!-- <button onclick="startTracking()">Start Tracking</button> -->
+    <button onclick="viewMap()">View Map</button>
+
+    <div id="map" ></div>
+    <p id="distance"></p>
+    <script>
+        window.onload = function () {
+            startTracking();
+        };
+        let driverMarker;
+        let tracking = false;
+        let map;
+
+        function startTracking() {
+            tracking = true;
+            getLocation();
+        }
+
+        function getLocation() {
+            if (navigator.geolocation && tracking) {
+                navigator.geolocation.getCurrentPosition((position) => {
+                    console.log("driverlocation",position)
+                    const lat = position.coords.latitude;
+                    const lon = position.coords.longitude;
+
+                    fetch(`/driver_location?lat=${lat}&lon=${lon}`).then(response => response.json())
+                        .then(data => {
+                            updateDriverMarker(lat, lon);
+                        });
+
+                    setTimeout(getLocation, 20000);  // Fetch location every 20 seconds
+                });
+            } else {
+                alert("Geolocation is not supported by this browser.");
+            }
+        }
+
+        function updateDriverMarker(lat, lon) {
+    if (!map) {
+        map = L.map('map').setView([lat, lon], 90);  // Initialize the map if not already initialized
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+    }
+
+    // Define custom icon
+    const customIcon = L.icon({
+        iconUrl: 'https://cdn.iconscout.com/icon/free/png-256/free-driver-icon-download-in-svg-png-gif-file-formats--user-man-avatar-male-profession-pack-people-icons-1518720.png', // Replace with the path to your custom icon
+        iconSize: [38, 38],  // Size of the icon (you can adjust)
+        iconAnchor: [19, 38],  // Point of the icon which will correspond to marker's location
+        popupAnchor: [0, -38]  // Point from which the popup should open relative to the iconAnchor
+    });
+
+    if (!driverMarker) {
+        driverMarker = L.marker([lat, lon], { icon: customIcon }).addTo(map)
+            .bindPopup("Driver's Current Location").openPopup();
+    } else {
+        driverMarker.setLatLng([lat, lon]);  // Update the marker's position
+    }
+}
+
+//only for viewmap
+function viewMap() {
+    fetch('/coordinates')
+    .then(response => response.json())
+    .then(data => {
+        updateCombinedMap(data);
+    });
+}
+
+function updateCombinedMap(data) {
+    if (!map) {
+        map = L.map('map').setView([11.0835, 76.9966], 90);  // Initialize map centered on Device 1 if not already initialized
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+    }
+
+    const latLngs = [
+        L.latLng(data['device1'][0], data['device1'][1]),
+        L.latLng(data['device2'][0], data['device2'][1])
+    ];
+
+    // Remove the driver from the routing waypoints to avoid overlap
+    const routingLatLngs = [...latLngs]; // Clone the latLngs array for routing
+
+    // Add routing for devices only
+    L.Routing.control({
+        waypoints: routingLatLngs,
+        createMarker: function (i, waypoint, n) {
+            let markerText = `Device ${i + 1}`;
+            return L.marker(waypoint.latLng).bindPopup(markerText);
+        },
+        lineOptions: {
+            styles: [{ color: 'blue', weight: 4 }]
+        }
+    }).addTo(map);
+
+    // Add a separate custom marker for the driver
+    if (data['driver']) {
+        const driverLatLng = L.latLng(data['driver'][0], data['driver'][1]);
+
+        const driverIcon = L.icon({
+            iconUrl: 'https://cdn.iconscout.com/icon/free/png-256/free-driver-icon-download-in-svg-png-gif-file-formats--user-man-avatar-male-profession-pack-people-icons-1518720.png', // Custom driver icon
+            iconSize: [38, 38],
+            iconAnchor: [19, 38],
+            popupAnchor: [0, -38]
+        });
+
+        L.marker(driverLatLng, { icon: driverIcon }).addTo(map)
+            .bindPopup("Driver's Current Location").openPopup();
+        
+        latLngs.push(driverLatLng);  // Add driver to bounds calculation
+    }
+
+    // Fit map bounds to show all markers
+    map.fitBounds(L.latLngBounds(latLngs));
+}
+
+
+    </script>
+</body>
+
+</html>
