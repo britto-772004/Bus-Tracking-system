@@ -1,0 +1,90 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bus Route Tracking</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
+    <style>
+        #map {
+            height: 600px;
+        }
+        .container {
+            margin: 20px;
+        }
+        #route-select {
+            width: 300px;
+            padding: 10px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Select Your Route</h2>
+    <select id="route-select">
+        <option value="default" disabled selected>Select a route</option>
+        <option value="priyabharathiHouse">KGISL -> PriyabharathiHouse</option>
+        <option value="gandhipuram">KGISL -> Gandhipuram</option>
+    </select>
+</div>
+
+<div id="map"></div>
+
+<!-- Leaflet and Routing Machine Libraries -->
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
+<script>
+    // Initialize the map
+    var map = L.map('map').setView([11.0183, 76.9743], 12); // Centered on KGISL
+
+    // Add a tile layer (the base map)
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19
+    }).addTo(map);
+
+    // Define coordinates for KGISL and destinations
+    var kgisl = [11.0183, 76.9743];
+    var priyabharathiHouse = [11.0261, 77.0195];
+    var gandhipuram = [10.9986, 76.9676];
+
+    // Add a marker for KGISL
+    L.marker(kgisl).addTo(map).bindPopup('KGISL').openPopup();
+
+    // Routing control variable
+    var routingControl;
+
+    // Function to update the route using Leaflet Routing Machine
+    function updateRoute(coords) {
+        // If there's already a route, remove it
+        if (routingControl) {
+            map.removeControl(routingControl);
+        }
+
+        // Create a new routing control and add it to the map
+        routingControl = L.Routing.control({
+            waypoints: [
+                L.latLng(kgisl),  // Source (KGISL)
+                L.latLng(coords)  // Destination (selected route)
+            ],
+            routeWhileDragging: true
+        }).addTo(map);
+    }
+
+    // Listen for changes in the dropdown menu
+    document.getElementById('route-select').addEventListener('change', function() {
+        var selectedRoute = this.value;
+        if (selectedRoute === 'priyabharathiHouse') {
+            updateRoute(priyabharathiHouse);
+        } else if (selectedRoute === 'gandhipuram') {
+            updateRoute(gandhipuram);
+        }
+    });
+</script>
+
+</body>
+
+</html>
