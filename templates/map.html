@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Geofence Map</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+        body {
+            font-family: Calibri, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        h1 {
+            text-align: center;
+            margin: 20px 0;
+        }
+        #counts {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        #map {
+            width: 100%;
+            height: 600px;
+            margin: 0 auto;
+        }
+        #student-table {
+            margin: 20px auto;
+            width: 80%;
+            border-collapse: collapse;
+        }
+        #student-table th, #student-table td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+        #student-table th {
+            background-color: #f4f4f4;
+        }
+        #student-table caption {
+            margin-bottom: 10px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .student-column {
+            width: 50%;
+        }
+    </style>
+</head>
+<body>
+    <h1>Geofence Map - KGISL Institute of Technology</h1>
+
+    <!-- Counts Section -->
+    <div id="counts">
+        <p><strong>Students Near the Bus:</strong> {{ inside_bus }}</p>
+        <p><strong>Students Away from the Bus:</strong> {{ students_count }}</p>
+    </div>
+
+    <!-- Map Section -->
+    <div id="map">
+        {{ map_html | safe }}
+    </div>
+
+    <br><br>
+    <br><br>
+    <br><br>
+    <br><br>
+    <br><br>
+    <br><br>
+    <br><br>
+    
+
+
+    <!-- Student Table Section with Inside and Outside Columns -->
+    <table id="student-table">
+        <caption>Student Geofence Status</caption>
+        <thead>
+            <tr>
+                <!-- Inside Bus Column Header with Count -->
+                <th class="student-column">Inside the Bus ({{ inside_bus }})</th>
+                <!-- Outside Bus Column Header with Count -->
+                <th class="student-column">Outside the Bus ({{ students_count }})</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <!-- Inside Column -->
+                <td class="student-column">
+                    {% for student in students_status %}
+                        {% if student.status == "Inside Bus" %}
+                            <p>{{ student.name }}</p>
+                        {% endif %}
+                    {% endfor %}
+                </td>
+
+                <!-- Outside Column -->
+                <td class="student-column">
+                    {% for student in students_status %}
+                        {% if student.status == "Outside Bus" %}
+                            <p>{{ student.name }}</p>
+                        {% endif %}
+                    {% endfor %}
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        // Safeguard: Remove markers after 10 seconds
+        setTimeout(function () {
+            if (typeof markers !== 'undefined') {
+                markers.forEach(function (marker) {
+                    mymap.removeLayer(marker); // Remove each marker from the map
+                });
+                markers = []; // Clear the markers array
+                alert("Markers have been removed after 10 seconds.");
+            }
+        }, 10000); // 10000 milliseconds = 10 seconds
+    </script>
+</body>
+</html>
